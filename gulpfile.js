@@ -14,7 +14,11 @@ var uglify = require('gulp-uglify');
 var sourcemaps = require('gulp-sourcemaps');
 var minifyHtml = require('gulp-minify-html');
 var favicons = require('favicons');
+var psi = require('psi');
 
+
+var site = 'http://www.arnotts.ie';
+var key = '';
 
 
 gulp.task('minifyLess', function() {
@@ -26,20 +30,19 @@ gulp.task('minifyLess', function() {
     }))
     .pipe(sourcemaps.init())
     .pipe(concat('all.css'))
-    .pipe(size())
     .pipe(uncss({
       html: ['test.html']
     }))
-    .pipe(size())
     .pipe(minifyCss())
-    .pipe(size())
     .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('./dist/css'));
 });
 
 gulp.task('minifyHtml', function() {
   gulp.src('*.html')
+    .pipe(size())
     .pipe(minifyHtml())
+    .pipe(size())
     .pipe(gulp.dest('./dist/'))
 })
 
@@ -66,7 +69,31 @@ gulp.task('images', function() {
     .pipe(gulp.dest('./dist/img'));
 });
 
-gulp.task('default', function() {
+gulp.task('mobile-pagespeed', function () {
+    return psi(site, {
+        // key: key
+        nokey: 'true',
+        strategy: 'mobile',
+    }, function (err, data) {
+        console.log(data.score);
+        console.log(data.pageStats);
+    });
+});
 
-  gulp.watch(['./less/*.less', './js/*.js'], ['minifyLess', 'checkJavascript', 'minifyJavascript', 'minifyHtml', 'images']);
+gulp.task('desktop-pagespeed', function () {
+    return psi(site, {
+        nokey: 'true',
+        // key: key,
+        strategy: 'desktop',
+    }, function (err, data) {
+        console.log(data.score);
+        console.log(data.pageStats);
+    });
+});
+
+
+gulp.task('default', function() {
+  var tasks = ['minifyLess', 'checkJavascript', 'minifyJavascript', 'minifyHtml', 'images','mobile-pagespeed','desktop-pagespeed'];
+  gulp.run(tasks);
+  gulp.watch(['./less/*.less', './js/*.js'], tasks);
 });
